@@ -425,8 +425,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 936f255dd1502a445bb18362b111ec9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  path_to_pointcloud: Assets/Pointclouds/points.txt
-  points_to_render: 419901
+  path_to_pointcloud: Assets/Pointclouds/building_pointcloud.txt
+  points_to_render: -1
   point_size: 1
 --- !u!4 &1502326917
 Transform:

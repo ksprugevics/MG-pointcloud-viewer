@@ -4,31 +4,39 @@ using System.Collections;
 using System.Globalization;
 using System.Collections.Generic;
 using UnityEngine;
+using Random=UnityEngine.Random;
 
 public class RenderPointcloud : MonoBehaviour
 {
     private Material mat;
     private Vector3[] coordinates;
     private int[] labels;
+    private List<int> unique_labels;
     private Color32[] colors;
     private int[] indices;
 
-    public string path_to_pointcloud = "Assets/Pointclouds/points_labeled.txt";
-    public int points_to_render = 1000;
+    public string path_to_pointcloud;
+    public int points_to_render = -1;
     public float point_size = 1.0f;
 
-    void ParsePointcloud(int max_points)
+    void ParsePointcloud()
     {
+        if(points_to_render == -1)
+        {
+            points_to_render = File.ReadAllLines(path_to_pointcloud).Length;
+        }
+
         // Initialize arrays
-        coordinates = new Vector3[max_points];
-        colors = new Color32[max_points];
-        indices = new int[max_points];
-        labels = new int[max_points];
+        coordinates = new Vector3[points_to_render];
+        colors = new Color32[points_to_render];
+        indices = new int[points_to_render];
+        labels = new int[points_to_render];
+        unique_labels = new List<int>();
 
         StreamReader reader = new StreamReader(path_to_pointcloud);
 
         // Reads coorindates line by line and populates coordinates/color array
-        for(int i = 0; i < max_points; i++) 
+        for(int i = 0; i < points_to_render; i++) 
         {
             string line = reader.ReadLine();
             string[] coords = line.Split(new[] {',', ' '});
@@ -45,7 +53,13 @@ public class RenderPointcloud : MonoBehaviour
             // Points have been given labels
             if(coords.Length == 4)
             {
-                labels[i] = (int)float.Parse(coords[3], CultureInfo.InvariantCulture);
+                int nr = (int)float.Parse(coords[3], CultureInfo.InvariantCulture);
+                labels[i] = nr;
+                
+                if(!unique_labels.Contains(nr))
+                {
+                    unique_labels.Add(nr);
+                }
             }
 
             Color32 color = Color32.Lerp(Color.green, Color.red, point[1] / 20);
@@ -110,11 +124,11 @@ public class RenderPointcloud : MonoBehaviour
     }
 
 
-    void Start ()
+    void Start()
     {
-        ParsePointcloud(points_to_render);
+        ParsePointcloud();
         TranslatePointcoud();
-
+        
         Mesh mesh = new Mesh();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         GetComponent<MeshFilter>().mesh = mesh;
@@ -123,8 +137,21 @@ public class RenderPointcloud : MonoBehaviour
         mesh.colors32 = colors;
         mesh.SetIndices(indices, MeshTopology.Points, 0);
         
-        ChangeLabelColor(0, new Color32(36, 153, 40, 255));
-        ChangeLabelColor(1, new Color32(111, 118, 112, 255));
+        
+        for(int i = 0; i < unique_labels.Count; i++)
+        {
+            Color32 temp_color = new Color32(
+                (byte)Random.Range(0, 255), 
+                (byte)Random.Range(0, 255), 
+                (byte)Random.Range(0, 255),
+                (byte)255
+            );
+            ChangeLabelColor(unique_labels[i], temp_color);
+        }
+
+        // 0 - trees, 1 - buildings
+        // ChangeLabelColor(0, new Color32(36, 153, 40, 255));
+        // ChangeLabelColor(1, new Color32(111, 118, 112, 255));
         mesh.colors32 = colors;
 
         mat = GetComponent<Renderer>().sharedMaterial;
